@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de bord — Démarrages VRV</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f2f4f8;color:#1c2b3a}
+  header{background:#1F4E78;color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:20px}
+  header p{margin:4px 0 0;font-size:12px;opacity:.8}
+  .wrap{padding:20px 24px;max-width:1200px;margin:auto}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+  .kpi{background:#fff;border-radius:10px;padding:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .kpi .n{font-size:30px;font-weight:700;color:#1F4E78}
+  .kpi .l{font-size:12px;color:#5a6b7d;margin-top:4px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:24px}
+  .card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .card h2{margin:0 0 12px;font-size:15px;color:#1F4E78}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#1F4E78;color:#fff;text-align:left;padding:8px;position:sticky;top:0}
+  td{padding:7px 8px;border-bottom:1px solid #e6ebf1}
+  tr:nth-child(even) td{background:#f7f9fc}
+  .tblwrap{max-height:420px;overflow:auto;border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .tblwrap h2{padding:16px 16px 0;font-size:15px;color:#1F4E78;margin:0}
+  .foot{color:#8a97a5;font-size:11px;text-align:center;margin:24px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tableau de bord — Démarrages VRV en cours</h1>
+  <p>Source : export ProgressionLIVE &bull; mis à jour le 19 octobre 2026</p>
+</header>
+<div class="wrap">
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <div class="card"><h2>En cours par état</h2><canvas id="chEtat"></canvas></div>
+    <div class="card"><h2>En cours par type</h2><canvas id="chType"></canvas></div>
+    <div class="card"><h2>En cours par ville (top 10)</h2><canvas id="chVille"></canvas></div>
+    <div class="card"><h2>En cours par mois</h2><canvas id="chMois"></canvas></div>
+    <div class="card"><h2>En cours — 8 prochaines semaines</h2><canvas id="chSem"></canvas></div>
+  </div>
+  <div class="tblwrap"><h2>Prochains démarrages VRV</h2>
+    <table><thead><tr><th>Code</th><th>Type</th><th>Rendez-vous</th><th>État</th><th>Ville</th><th>Projet</th></tr></thead>
+    <tbody id="tbody"></tbody></table>
+  </div>
+  <p class="foot">Pour actualiser : envoie un nouvel export ProgressionLIVE, le tableau sera régénéré.</p>
+</div>
+<script>
+const TASKS = [{"code": "MEMV023864", "type": "VRV - Assistance à la MEM", "rdv": "2026-07-15T08:00", "etat": "Brouillon - Assigné", "ville": "MONTREAL", "projet": ""}, {"code": "INS022343", "type": "VRV - Visite de chantier / PRE-MEM", "rdv": "2026-10-20T09:00", "etat": "Brouillon - Assigné", "ville": "BEACONSFIELD", "projet": "MC65090492 - CSSMB ECOLE ALLANCROFT"}, {"code": "MEMV012501", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-21T08:00", "etat": "Brouillon - Assigné", "ville": "SAINT-HYACINTHE", "projet": "MC63110276 - PALAIS DE JUSTICE ST-HYACINTHE PJSH (VENTILATION)"}, {"code": "MEMV024576", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-21T09:00", "etat": "Brouillon - Assigné", "ville": "Rivière-du-Loup", "projet": "CM26020183 - HOTEL LÉVESQUE, RTU ECOAC"}, {"code": "MEMV015355", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-22T08:00", "etat": "Brouillon - Assigné", "ville": "Saint-Adolphe d'Howard", "projet": ""}, {"code": "MEMV016449", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-23T08:00", "etat": "Brouillon - Assigné", "ville": "BEACONSFIELD", "projet": "MC65090492 - CSSMB ECOLE ALLANCROFT"}, {"code": "MEMV025021", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-23T08:00", "etat": "Brouillon - Assigné", "ville": "MONTRÉAL", "projet": "MC66080775 - AGRICULTURE DU COIN : BATIMENT 3"}, {"code": "MEMV015499", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-23T12:30", "etat": "Brouillon - Assigné", "ville": "Montréal", "projet": ""}, {"code": "MEMV022890", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-26T08:00", "etat": "Brouillon - Assigné", "ville": "Mirabel", "projet": "MC66060500 - MV0008 - YMX CENTRE D'INNOVATION DE MIRABEL"}, {"code": "MEMV024000", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-26T08:30", "etat": "Brouillon - Assigné", "ville": "TROIS-RIVIÈRES", "projet": "MC66070678 - 21250 - AGRANDISSEMENT BARRETTE"}, {"code": "MEMV024215", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-26T08:30", "etat": "Nouvelle MEM / Changement de date", "ville": "QUÉBEC", "projet": " CM24100303 - SIRCAAQ MILIEU DE VIE ETUDIANTS AUTOCHTONES (VE)"}, {"code": "MEMV019592", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-27T07:00", "etat": "Brouillon - Assigné", "ville": "Cowansville", "projet": "MC66020078 - CSS VAL-DES-CERFS ÉCOLE MASSEY VANIER"}, {"code": "INS021844", "type": "VRV - Visite de chantier / PRE-MEM", "rdv": "2026-10-27T08:50", "etat": "Brouillon - Assigné", "ville": "MONTRÉAL", "projet": "MC65110637 - DU CANAL RÉPARTITION DES ÉTAGES"}, {"code": "MEMV024918", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-28T07:30", "etat": "Brouillon - Assigné", "ville": "ALMA", "projet": "CM26020188 - Toyota Alma"}, {"code": "MEMV017444", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-28T08:00", "etat": "Brouillon - Assigné", "ville": "PIERREFONDS", "projet": "MC65110604 - ÉCOLE DE L'ALTITUDE (VE-VD)"}, {"code": "MEMV019478", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-28T08:00", "etat": "Brouillon - Assigné", "ville": "Salaberry-de-Valleyfield", "projet": "MC66020076 - ÉCOLE MODULAIRE NOUVEL-ENVOL"}, {"code": "MEMV024822", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-28T08:00", "etat": "Brouillon - Assigné", "ville": "TERREBONNE", "projet": "MC66080714 - ECOLE LEOPOLD GRAVEL"}, {"code": "MEMV024823", "type": "VRV - Assistance à la MEM", "rdv": "2026-10-30T07:00", "etat": "Brouillon - Assigné", "ville": "LEVIS", "projet": ""}, {"code": "MEMV018927", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-02T08:00", "etat": "Brouillon - Assigné", "ville": "BÉCANCOUR", "projet": "MC64110375 - MIRAE ADVANCED MATERIAL (VENT"}, {"code": "MEMV023735", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-02T08:00", "etat": "Nouvelle MEM / Changement de date", "ville": "QUEBEC", "projet": "CM26020200 - COLLEGE DES COMPAGNONS"}, {"code": "MEMV024913", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-04T07:30", "etat": "Nouvelle MEM / Changement de date", "ville": "ALMA", "projet": "CM26020188 - Toyota Alma"}, {"code": "MEMV023219", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-04T08:30", "etat": "Brouillon - Assigné", "ville": "POINTE-AUX-TREMBLES", "projet": ""}, {"code": "MEMV018609", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-05T08:00", "etat": "Brouillon - Assigné", "ville": "MONTREAL", "projet": "MC65030130 - STATION C"}, {"code": "MEMV024117", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-09T07:00", "etat": "Nouvelle MEM / Changement de date", "ville": "Baie-Comeau", "projet": "CM26030283 - MANIC 2 - BÂTIMENT MODULAIRES"}, {"code": "MEMV023997", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-09T08:30", "etat": "Brouillon - Assigné", "ville": "RIMOUSKI", "projet": ""}, {"code": "MEMV024118", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-09T18:30", "etat": "Nouvelle MEM / Changement de date", "ville": "BAIE-COMEAU", "projet": "CM26050583 - MANIC 2 - BÂTIMENT C MODULAIRES"}, {"code": "MEMV015193", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-10T08:00", "etat": "Brouillon - Assigné", "ville": "VARENNES", "projet": ""}, {"code": "MEMV024071", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-11T17:30", "etat": "Brouillon - Assigné", "ville": "CHUTE-AUX-OUTARDES", "projet": ""}, {"code": "MEMV024984", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-16T08:00", "etat": "Brouillon - Assigné", "ville": "QUÉBEC", "projet": "25080952 - RÉFECTION DU POSTE DE SURPRESSION P764 "}, {"code": "MEMV024914", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-17T07:30", "etat": "Nouvelle MEM / Changement de date", "ville": "ALMA", "projet": "CM26020188 - Toyota Alma"}, {"code": "INS022380", "type": "VRV - Visite de chantier / PRE-MEM", "rdv": "2026-11-17T08:00", "etat": "Brouillon - Assigné", "ville": "MONTRÉAL", "projet": "MC65110610 - 2075 ROBERT-BOURRASSA (VE)"}, {"code": "INS020935", "type": "VRV - Visite de chantier / PRE-MEM", "rdv": "2026-11-17T08:30", "etat": "Brouillon - Assigné", "ville": "MONTREAL", "projet": "MC66030170 - CHALET DU PARC LOYOLA"}, {"code": "MEMV025080", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-18T08:00", "etat": "Brouillon - Assigné", "ville": "Montréal,", "projet": "MC65080434 - RÉAMÉNAGEMENT DE L'AILE F2 AU CHSLD CARTIERVILLE"}, {"code": "MEMV015058", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-25T08:00", "etat": "Brouillon - Assigné", "ville": "SAINT-JEAN-SUR-RICHELIEU", "projet": ""}, {"code": "MEMV019597", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-26T08:00", "etat": "Brouillon - Assigné", "ville": "BLAINVILLE", "projet": "MC66020086 - MISE À NIVEAU CVCA CENTRE GUY-FRIGON"}, {"code": "MEMV024069", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-26T08:00", "etat": "Brouillon - Assigné", "ville": "Saint-Georges", "projet": "CM26030344 - MAISON MATHÉO"}, {"code": "MEMV015962", "type": "VRV - Assistance à la MEM", "rdv": "2026-11-30T08:00", "etat": "Brouillon - Assigné", "ville": "", "projet": ""}, {"code": "MEMV024544", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-03T08:00", "etat": "Brouillon - Assigné", "ville": "MONTREAL", "projet": "MC65030130 - STATION C"}, {"code": "MEMV023963", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-03T08:30", "etat": "Nouvelle MEM / Changement de date", "ville": "QUÉBEC", "projet": "CM26060703 - LAURIER QUEBEC - REMPLACEMENT UNITES 2026"}, {"code": "MEMV014667", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-07T08:00", "etat": "Brouillon - Assigné", "ville": "Québec", "projet": " CM24070216 - OMHQ BOURLAMAQUE"}, {"code": "MEMV024853", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-11T07:30", "etat": "Brouillon - Assigné", "ville": "VARENNES", "projet": ""}, {"code": "MEMV024109", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-11T08:00", "etat": "Brouillon - Assigné", "ville": "Montréal", "projet": "MC66080789 - RESTAURANT WEIWEI"}, {"code": "MEMV024296", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-11T08:00", "etat": "Brouillon - Assigné", "ville": "SAINT-LAMBERT", "projet": "MC66070701 - COLLÈGE DUROCHER LABORATOIRES DE SCIENCES"}, {"code": "MEMV015498", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-14T08:00", "etat": "Brouillon - Assigné", "ville": "Pointe-Claire", "projet": ""}, {"code": "MEMV020647", "type": "VRV - Assistance à la MEM", "rdv": "2026-12-14T08:00", "etat": "Brouillon - Assigné", "ville": "MONTRÉAL", "projet": "MC66030196 - CONDO EXAL 5222 SHERBROOKE EST À MTL"}, {"code": "INS022381", "type": "VRV - Visite de chantier / PRE-MEM", "rdv": "2026-12-15T07:00", "etat": "Brouillon - Assigné", "ville": "MONTRÉAL", "projet": "MC65110610 - 2075 ROBERT-BOURRASSA (VE)"}];
+const TERMINE = ["Visite terminée","Facturé (ITC SERVICES)","Transmis au client"];
+const today = new Date(); today.setHours(0,0,0,0);
+const actif = t => !TERMINE.includes(t.etat);
+const vrv = TASKS.filter(t => t.actif = actif(t));
+const encours = vrv.filter(actif);
+const d = s => s ? new Date(s) : null;
+const enRetard = encours.filter(t => d(t.rdv) && d(t.rdv) < today);
+const cetteSem = encours.filter(t => { const x=d(t.rdv); return x && x>=today && x<new Date(today.getTime()+7*864e5); });
+const termines = vrv.filter(t => !actif(t));
+
+const kpis = [
+  ["Démarrages VRV (total)", vrv.length],
+  ["En cours", encours.length],
+  ["Rendez-vous cette semaine", cetteSem.length],
+  ["En retard", enRetard.length],
+  ["Terminés", termines.length],
+];
+document.getElementById("kpis").innerHTML = kpis.map(k =>
+  `<div class="kpi"><div class="n">${k[1]}</div><div class="l">${k[0]}</div></div>`).join("");
+
+const BLUE = "#1F4E78", LIGHT = "#5B9BD5";
+function countBy(arr, key){
+  const m = {};
+  arr.forEach(t => { const k = key(t); m[k] = (m[k]||0)+1; });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function bar(id, labels, vals, horizontal=true){
+  new Chart(document.getElementById(id), {type:"bar",
+    data:{labels, datasets:[{data:vals, backgroundColor:BLUE, borderRadius:4}]},
+    options:{indexAxis: horizontal?"y":"x", plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true, ticks:{precision:0}}, y:{beginAtZero:true, ticks:{precision:0}}}}});
+}
+// Par état
+let e = countBy(encours, t=>t.etat);
+bar("chEtat", e.map(x=>x[0]), e.map(x=>x[1]));
+// Par type (camembert)
+let ty = countBy(encours, t=>t.type);
+new Chart(document.getElementById("chType"), {type:"pie",
+  data:{labels:ty.map(x=>x[0]), datasets:[{data:ty.map(x=>x[1]),
+    backgroundColor:["#1F4E78","#5B9BD5","#A8C6E5","#D6E4F0"]}]},
+  options:{plugins:{legend:{position:"bottom"}}}});
+// Par ville
+let v = countBy(encours, t=>(t.ville||"—").toUpperCase()).slice(0,10);
+bar("chVille", v.map(x=>x[0]), v.map(x=>x[1]));
+// Par mois
+const MOIS=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+let mo = countBy(encours.filter(t=>d(t.rdv)), t=>{const x=d(t.rdv);return MOIS[x.getMonth()]+" "+x.getFullYear();});
+bar("chMois", mo.map(x=>x[0]), mo.map(x=>x[1]), false);
+// 8 prochaines semaines
+const monday = new Date(today); monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+let semL=[], semV=[];
+for(let k=0;k<8;k++){
+  const s=new Date(monday); s.setDate(s.getDate()+7*k);
+  const e2=new Date(s); e2.setDate(e2.getDate()+7);
+  semL.push(s.toLocaleDateString("fr-CA",{day:"numeric",month:"short"}));
+  semV.push(encours.filter(t=>{const x=d(t.rdv);return x&&x>=s&&x<e2;}).length);
+}
+bar("chSem", semL, semV, false);
+// Tableau prochains
+const up = encours.filter(t=>d(t.rdv)&&d(t.rdv)>=today).sort((a,b)=>d(a.rdv)-d(b.rdv));
+document.getElementById("tbody").innerHTML = up.map(t =>
+  `<tr><td>${t.code}</td><td>${t.type}</td><td>${t.rdv.replace("T"," ")}</td><td>${t.etat}</td><td>${t.ville}</td><td>${t.projet}</td></tr>`
+).join("") || `<tr><td colspan="6">Aucun démarrage VRV à venir</td></tr>`;
+</script>
+</body>
+</html>
