@@ -66,7 +66,7 @@ const TASKS = [{"code": "INS000283", "type": "VRV - Visite de chantier / PRE-MEM
 const TERMINE = ["Visite terminée","Facturé (ITC SERVICES)","Transmis au client","Terminé","Facturé sur autre tâche","Rapport complété","Prêt pour facturation","Confirmé non facturable","Consolidation projet","Annulation à moins de 48h d'avis"];
 const today = new Date(); today.setHours(0,0,0,0);
 const actif = t => !TERMINE.includes(t.etat);
-const vrv = TASKS.filter(t => t.actif = actif(t));
+const vrv = TASKS;
 const encours = vrv.filter(actif);
 const d = s => s ? new Date(s) : null;
 const enRetard = encours.filter(t => d(t.rdv) && d(t.rdv) < today);
