@@ -93,12 +93,9 @@ const pct = d => (d.budget && d.utilise!=null) ? (d.utilise/d.budget*100) : null
 
 $("sub").textContent = `Projets (dossiers) importés de ProgressionLIVE — fichier ${kpi.src_d} · Suivis à jour au ${fmtD(kpi.ref)} · Lien avec les démarrages : numéro de projet MC`;
 $("kpis").innerHTML = [
-  [kpi.total, "dossiers (projets)"],
-  [kpi.actifs, "dossiers actifs — suivi en cours"],
-  [fmt$(kpi.budget_total), `budget MEM total (${kpi.budget_n} budgets lisibles)`],
-  [fmt$(kpi.utilise_total), "montant utilisé à ce jour"],
-  [kpi.heures_total.toLocaleString("fr-CA") + " h", `heures prévues MEM (${kpi.heures_n} dossiers)`],
-  [kpi.lies, `dossiers liés à des démarrages (${kpi.taches_liees} tâches)`],
+  [kpi.total, "nombre total de projets MC/CM"],
+  [kpi.brouillon, "dossiers brouillon"],
+  [kpi.actifs, "dossiers actifs (non-brouillon)"],
 ].map(([v,l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
 
 const etats = [...new Set(dossiers.map(d=>d.etat))], resps = [...new Set(dossiers.map(d=>d.resp).filter(Boolean))].sort();
