@@ -51,7 +51,7 @@
     <table><thead><tr><th>Code</th><th>Rendez-vous</th><th>État</th><th>Ville</th><th>Projet</th></tr></thead>
     <tbody id="tbMEM"></tbody></table>
   </div>
-  <div class="tblwrap"><h2>Prochains démarrages VRV — PRE-MEM</h2>
+  <div class="tblwrap" id="wrapPRE"><h2>Prochains démarrages VRV — PRE-MEM</h2>
     <table><thead><tr><th>Code</th><th>Rendez-vous</th><th>État</th><th>Ville</th><th>Projet</th></tr></thead>
     <tbody id="tbPRE"></tbody></table>
   </div>
@@ -140,6 +140,7 @@ const ligne = t => `<tr><td>${t.code}</td><td>${t.rdv.replace("T"," ")}</td><td>
 const grille = (id, liste) => { document.getElementById(id).innerHTML = liste.map(ligne).join("") || `<tr><td colspan="5">Aucun démarrage à venir</td></tr>`; };
 grille("tbMEM", up.filter(t=>t.type==="VRV - Assistance à la MEM"));
 grille("tbPRE", up.filter(t=>t.type==="VRV - PRE-MEM"));
+if(!up.some(t=>t.type==="VRV - PRE-MEM")) document.getElementById("wrapPRE").style.display="none";
 grille("tbVIS", up.filter(t=>t.type==="VRV - Visite de chantier / PRE-MEM"));
 </script>
 </body>
