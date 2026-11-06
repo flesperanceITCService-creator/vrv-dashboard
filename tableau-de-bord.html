@@ -47,9 +47,17 @@
     <div class="card"><h2>Terminés par mois</h2><canvas id="chMois"></canvas></div>
     <div class="card"><h2>En cours — 8 prochaines semaines</h2><canvas id="chSem"></canvas></div>
   </div>
-  <div class="tblwrap"><h2>Prochains démarrages VRV</h2>
-    <table><thead><tr><th>Code</th><th>Type</th><th>Rendez-vous</th><th>État</th><th>Ville</th><th>Projet</th></tr></thead>
-    <tbody id="tbody"></tbody></table>
+  <div class="tblwrap"><h2>Prochains démarrages VRV — MEM</h2>
+    <table><thead><tr><th>Code</th><th>Rendez-vous</th><th>État</th><th>Ville</th><th>Projet</th></tr></thead>
+    <tbody id="tbMEM"></tbody></table>
+  </div>
+  <div class="tblwrap"><h2>Prochains démarrages VRV — PRE-MEM</h2>
+    <table><thead><tr><th>Code</th><th>Rendez-vous</th><th>État</th><th>Ville</th><th>Projet</th></tr></thead>
+    <tbody id="tbPRE"></tbody></table>
+  </div>
+  <div class="tblwrap"><h2>Prochains démarrages VRV — Visite de chantier</h2>
+    <table><thead><tr><th>Code</th><th>Rendez-vous</th><th>État</th><th>Ville</th><th>Projet</th></tr></thead>
+    <tbody id="tbVIS"></tbody></table>
   </div>
   <p class="foot">Pour actualiser : envoie un nouvel export ProgressionLIVE, le tableau sera régénéré.</p>
 </div>
@@ -126,11 +134,13 @@ for(let k=0;k<8;k++){
   semV.push(encours.filter(t=>{const x=d(t.rdv);return x&&x>=s&&x<e2;}).length);
 }
 bar("chSem", semL, semV, false);
-// Tableau prochains
+// Tableaux prochains démarrages — 3 grilles par type
 const up = encours.filter(t=>d(t.rdv)&&d(t.rdv)>=today).sort((a,b)=>d(a.rdv)-d(b.rdv));
-document.getElementById("tbody").innerHTML = up.map(t =>
-  `<tr><td>${t.code}</td><td>${t.type}</td><td>${t.rdv.replace("T"," ")}</td><td>${t.etat}</td><td>${t.ville}</td><td>${t.projet}</td></tr>`
-).join("") || `<tr><td colspan="6">Aucun démarrage VRV à venir</td></tr>`;
+const ligne = t => `<tr><td>${t.code}</td><td>${t.rdv.replace("T"," ")}</td><td>${t.etat}</td><td>${t.ville}</td><td>${t.projet}</td></tr>`;
+const grille = (id, liste) => { document.getElementById(id).innerHTML = liste.map(ligne).join("") || `<tr><td colspan="5">Aucun démarrage à venir</td></tr>`; };
+grille("tbMEM", up.filter(t=>t.type==="VRV - Assistance à la MEM"));
+grille("tbPRE", up.filter(t=>t.type==="VRV - PRE-MEM"));
+grille("tbVIS", up.filter(t=>t.type==="VRV - Visite de chantier / PRE-MEM"));
 </script>
 </body>
 </html>
