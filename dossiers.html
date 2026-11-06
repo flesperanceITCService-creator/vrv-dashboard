@@ -70,13 +70,6 @@
   <input type="search" id="q" placeholder="Rechercher : no de projet (MC…), titre, code P, PO, client…">
   <select id="fEtat"><option value="">Tous les états</option></select>
   <select id="fResp"><option value="">Toutes les ressources</option></select>
-  <select id="fTri">
-    <option value="maj">Tri : suivi le plus récent</option>
-    <option value="budget">Tri : budget MEM décroissant</option>
-    <option value="pct">Tri : % du budget utilisé</option>
-    <option value="rdv">Tri : prochain rendez-vous</option>
-    <option value="ancien">Tri : suivi le plus ancien</option>
-  </select>
   <label><input type="checkbox" id="fLie"> Avec tâches MEM liées seulement</label>
 </div>
 <p class="count" id="count"></p>
@@ -134,22 +127,15 @@ function cardHTML(d){
 }
 
 function render(){
-  const q = $("q").value.toLowerCase(), fe = $("fEtat").value, fr = $("fResp").value, lie = $("fLie").checked, tri = $("fTri").value;
+  const q = $("q").value.toLowerCase(), fe = $("fEtat").value, fr = $("fResp").value, lie = $("fLie").checked;
   let list = dossiers.filter(d =>
     (!fe || d.etat===fe) && (!fr || d.resp===fr) && (!lie || d.taches.length) &&
     (!q || [d.code,d.mc,d.titre,d.client,d.resp,d.po].join(" ").toLowerCase().includes(q)));
-  const by = {
-    maj: (a,b)=>(b.majProj||b.maj||"").localeCompare(a.majProj||a.maj||""),
-    ancien: (a,b)=>(a.majProj||a.maj||"9999").localeCompare(b.majProj||b.maj||"9999"),
-    budget: (a,b)=>(b.budget||-1)-(a.budget||-1),
-    pct: (a,b)=>(pct(b)??-1)-(pct(a)??-1),
-    rdv: (a,b)=>(a.rdv||"9999").localeCompare(b.rdv||"9999"),
-  };
-  list.sort(by[tri]);
+  list.sort((a,b)=>(b.majProj||b.maj||"").localeCompare(a.majProj||a.maj||""));
   $("count").textContent = `${list.length} dossier(s) affiché(s) sur ${dossiers.length}`;
   $("grid").innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty">Aucun dossier ne correspond aux filtres.</div>`;
 }
-["q","fEtat","fResp","fTri","fLie"].forEach(id => $(id).addEventListener("input", render));
+["q","fEtat","fResp","fLie"].forEach(id => $(id).addEventListener("input", render));
 render();
 
 function show(code){
