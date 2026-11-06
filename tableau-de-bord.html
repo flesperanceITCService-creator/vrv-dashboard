@@ -35,9 +35,15 @@
 <div class="wrap">
   <div class="kpis" id="kpis"></div>
   <div class="grid">
-    <div class="card"><h2>En cours par état</h2><canvas id="chEtat"></canvas></div>
-    <div class="card"><h2>En cours par type</h2><canvas id="chType"></canvas></div>
-    <div class="card"><h2>En cours par ville (top 10)</h2><canvas id="chVille"></canvas></div>
+    <div class="card"><h2>En cours par état</h2><ul id="listeEtats" style="list-style:none;margin:0;padding:0"></ul></div>
+    <div class="card"><h2>En cours</h2>
+      <div style="margin-bottom:8px">
+        <button id="ongType" style="padding:4px 12px;border:1px solid #1F4E78;background:#1F4E78;color:#fff;border-radius:4px;cursor:pointer">Par type</button>
+        <button id="ongProjet" style="padding:4px 12px;border:1px solid #1F4E78;background:#fff;color:#1F4E78;border-radius:4px;cursor:pointer">Par projet</button>
+      </div>
+      <div id="vueType"><canvas id="chType"></canvas></div>
+      <div id="vueProjet" style="display:none;max-height:320px;overflow-y:auto"><ul id="listeProjets" style="list-style:none;margin:0;padding:0"></ul></div>
+    </div>
     <div class="card"><h2>En cours par mois</h2><canvas id="chMois"></canvas></div>
     <div class="card"><h2>En cours — 8 prochaines semaines</h2><canvas id="chSem"></canvas></div>
   </div>
@@ -56,15 +62,17 @@ const vrv = TASKS.filter(t => t.actif = actif(t));
 const encours = vrv.filter(actif);
 const d = s => s ? new Date(s) : null;
 const enRetard = encours.filter(t => d(t.rdv) && d(t.rdv) < today);
-const cetteSem = encours.filter(t => { const x=d(t.rdv); return x && x>=today && x<new Date(today.getTime()+7*864e5); });
+const lundiSem = new Date(today); lundiSem.setDate(lundiSem.getDate()-((lundiSem.getDay()+6)%7));
+const lundiSuiv = new Date(lundiSem); lundiSuiv.setDate(lundiSuiv.getDate()+7);
+const cetteSem = encours.filter(t => { const x=d(t.rdv); return x && x>=lundiSem && x<lundiSuiv; });
 const termines = vrv.filter(t => !actif(t));
 
 const kpis = [
   ["Démarrages VRV (total)", vrv.length],
   ["En cours", encours.length],
+  ["Terminés", termines.length],
   ["Rendez-vous cette semaine", cetteSem.length],
   ["En retard", enRetard.length],
-  ["Terminés", termines.length],
 ];
 document.getElementById("kpis").innerHTML = kpis.map(k =>
   `<div class="kpi"><div class="n">${k[1]}</div><div class="l">${k[0]}</div></div>`).join("");
@@ -81,18 +89,29 @@ function bar(id, labels, vals, horizontal=true){
     options:{indexAxis: horizontal?"y":"x", plugins:{legend:{display:false}},
       scales:{x:{beginAtZero:true, ticks:{precision:0}}, y:{beginAtZero:true, ticks:{precision:0}}}}});
 }
-// Par état
+// Par état — liste complète, sans graphique
 let e = countBy(encours, t=>t.etat);
-bar("chEtat", e.map(x=>x[0]), e.map(x=>x[1]));
+document.getElementById("listeEtats").innerHTML = e.map(x =>
+  `<li style="display:flex;justify-content:space-between;padding:6px 2px;border-bottom:1px solid #e3e9f0"><span>${x[0]}</span><strong>${x[1]}</strong></li>`).join("");
+// Onglets type / projet
+let pj = countBy(encours, t=>(t.projet||"").trim() || "(sans projet)");
+document.getElementById("listeProjets").innerHTML = pj.map(x =>
+  `<li style="display:flex;justify-content:space-between;gap:8px;padding:6px 2px;border-bottom:1px solid #e3e9f0"><span>${x[0]}</span><strong>${x[1]}</strong></li>`).join("");
+const bT=document.getElementById("ongType"), bP=document.getElementById("ongProjet");
+function onglet(projet){
+  document.getElementById("vueType").style.display = projet?"none":"block";
+  document.getElementById("vueProjet").style.display = projet?"block":"none";
+  bT.style.background = projet?"#fff":"#1F4E78"; bT.style.color = projet?"#1F4E78":"#fff";
+  bP.style.background = projet?"#1F4E78":"#fff"; bP.style.color = projet?"#fff":"#1F4E78";
+}
+bT.addEventListener("click", ()=>onglet(false));
+bP.addEventListener("click", ()=>onglet(true));
 // Par type (camembert)
 let ty = countBy(encours, t=>t.type);
 new Chart(document.getElementById("chType"), {type:"pie",
   data:{labels:ty.map(x=>x[0]), datasets:[{data:ty.map(x=>x[1]),
     backgroundColor:["#1F4E78","#5B9BD5","#A8C6E5","#D6E4F0"]}]},
   options:{plugins:{legend:{position:"bottom"}}}});
-// Par ville
-let v = countBy(encours, t=>(t.ville||"—").toUpperCase()).slice(0,10);
-bar("chVille", v.map(x=>x[0]), v.map(x=>x[1]));
 // Par mois
 const MOIS=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
 let mo = countBy(encours.filter(t=>d(t.rdv)), t=>{const x=d(t.rdv);return MOIS[x.getMonth()]+" "+x.getFullYear();});
