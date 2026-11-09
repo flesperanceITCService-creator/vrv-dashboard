@@ -29,6 +29,9 @@
   .bcard h4{margin:12px 0 4px;font-size:12.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
   .bcard ul{margin:0;padding-left:17px;font-size:13.5px}
   .bcard li{margin:3px 0}
+  .searchbar{margin-bottom:12px}
+  .searchbar input{width:100%;max-width:480px;padding:9px 12px;border:1px solid #c4cfd9;border-radius:9px;font-size:14px}
+  .nores{font-size:13px;color:var(--mut);display:none;margin:4px 0 12px}
   .legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-size:12.5px}
   .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:11px;white-space:nowrap}
   .s1{background:#A9D08E;color:#2f4a1e}.s2{background:#FFE699;color:#6b5510}.s3{background:#F4A6A6;color:#7c2222}.s4{background:#9DC3E6;color:#1d4066}.sx{background:#e2e6ea;color:#5a6b7d}
@@ -69,6 +72,8 @@
 <section id="secF" class="on"><div class="grid" id="brands"></div></section>
 
 <section id="secT">
+  <div class="searchbar"><input type="search" id="qTech" placeholder="Rechercher un technicien par nom…" oninput="filterTechs(this.value)"></div>
+  <p class="nores" id="noTech">Aucun technicien ne correspond à la recherche.</p>
   <div class="legend">
     <span class="chip s1">Formation faite</span>
     <span class="chip s2">Formation en cours</span>
@@ -154,7 +159,7 @@ $("techs").innerHTML = DATA.techniciens.map((t, ti) => {
     }).join("")
   ).join("");
   const sel = ccqSaved[t.nom] || "";
-  return `<div class="tcard" id="tc${ti}">
+  return `<div class="tcard" id="tc${ti}" data-name="${t.nom}">
     <div class="thead"><h3>${t.nom}</h3>
       <select onchange="saveCCQ('${t.nom.replace(/'/g,"\\'")}', this.value)">
         <option value="" ${sel===""?"selected":""}>À déterminer</option>
@@ -174,6 +179,17 @@ $("techs").innerHTML = DATA.techniciens.map((t, ti) => {
   </div>`;
 }).join("");
 
+function filterTechs(q){
+  const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const nq = norm(q.trim());
+  let shown = 0;
+  document.querySelectorAll(".tcard").forEach(c => {
+    const ok = !nq || norm(c.dataset.name).includes(nq);
+    c.style.display = ok ? "" : "none";
+    if(ok) shown++;
+  });
+  $("noTech").style.display = shown ? "none" : "block";
+}
 function miniTab(ti, which, btn){
   const card = $("tc"+ti);
   card.querySelectorAll("[data-pane]").forEach(p => p.style.display = p.dataset.pane===which ? "" : "none");
