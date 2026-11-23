@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbre de compétences | ITC</title>
+<style>
+  :root{--blue:#1F4E78;--blue2:#2E75B6;--bg:#eef2f6;--ink:#1c2b3a;--mut:#5a6b7d}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+  header{background:var(--blue);color:#fff;padding:18px 22px}
+  header h1{margin:0;font-size:21px}
+  header p{margin:4px 0 0;opacity:.85;font-size:13px}
+  header nav{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+  header nav a{color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.5);padding:5px 12px;border-radius:20px;font-size:12.5px}
+  header nav a.on{background:#fff;color:var(--blue);font-weight:600}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 22px 4px}
+  .bar label{font-size:13px;font-weight:600;color:var(--blue)}
+  .bar select{padding:8px 10px;border:1px solid #c4cfd9;border-radius:9px;font-size:14px;background:#fff;min-width:240px}
+  .seg{display:flex;gap:6px}
+  .seg button{border:1px solid #c4cfd9;background:#fff;color:var(--blue);padding:7px 14px;border-radius:16px;font-size:13px;cursor:pointer;font-weight:600}
+  .seg button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .panel{padding:14px 22px 26px}
+  .tcard{background:#fff;border-radius:13px;padding:16px 18px;box-shadow:0 1px 5px rgba(0,0,0,.09)}
+  .thead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:2px solid #eef2f6;padding-bottom:10px;margin-bottom:6px}
+  .thead h2{margin:0;font-size:18px;color:var(--blue)}
+  .thead select{padding:6px 9px;border:1px solid #c4cfd9;border-radius:8px;font-size:13px;background:#fff}
+  .sum{font-size:12.5px;color:var(--mut)}
+  details.theme{border-bottom:1px solid #eef2f6;padding:6px 0}
+  details.theme>summary{cursor:pointer;font-weight:700;color:var(--blue);font-size:15px;padding:6px 0;list-style:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  details.theme>summary::-webkit-details-marker{display:none}
+  details.theme>summary:before{content:"▸";color:var(--blue2)}
+  details.theme[open]>summary:before{content:"▾"}
+  .brand{margin:4px 0 4px 18px;padding:7px 10px;background:#f7fafc;border:1px solid #e6ebf1;border-radius:9px}
+  .brand .bname{font-weight:600;font-size:13.5px}
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:11px;white-space:nowrap;margin:2px 2px 0 0}
+  .s1{background:#A9D08E;color:#2f4a1e}.s2{background:#FFE699;color:#6b5510}.s3{background:#F4A6A6;color:#7c2222}.s4{background:#9DC3E6;color:#1d4066}.sx{background:#e2e6ea;color:#5a6b7d}
+  .note{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:11px;background:#1F4E78;color:#fff;margin:2px 2px 0 0;white-space:nowrap}
+  .note.q2{background:#2E75B6}
+  .none{font-size:12px;color:var(--mut)}
+  .allf{margin-top:14px;border-top:2px solid #eef2f6;padding-top:10px}
+  .allf h3{margin:0 0 6px;font-size:14px;color:var(--blue)}
+  .allf .row{display:flex;justify-content:space-between;gap:8px;padding:3.5px 0;border-bottom:1px solid #f0f3f6;font-size:13px;align-items:center}
+  .foot{font-size:12px;color:var(--mut);padding:0 22px 26px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌳 Arbre de compétences</h1>
+  <p>Par technicien : catégories de produits → marques → formations reçues et notes du Forms (autoévaluation). Sources : fichiers de formation reçus le 23 novembre 2026 et Tableau de compétences-2026 ; notes Forms compilées graduellement.</p>
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="tableau-de-bord.html">Tableau de bord VRV</a>
+    <a href="kanban.html">Kanban des démarrages</a>
+    <a href="dossiers.html">Suivi de dossiers</a>
+    <a href="formation.html">Formation des techniciens</a>
+    <a class="on" href="#">Arbre de compétences</a>
+  </nav>
+</header>
+<div class="bar">
+  <label for="techSel">Technicien :</label>
+  <select id="techSel"></select>
+  <div class="seg">
+    <button data-f="Tous" class="on">Tous</button>
+    <button data-f="CCQ">CCQ</button>
+    <button data-f="Hors-CCQ">Non-CCQ</button>
+  </div>
+</div>
+<div class="panel" id="panel"></div>
+<p class="foot">Le statut CCQ / Hors-CCQ se choisit dans la fiche du technicien (ou sur la page Formation des techniciens) ; il est sauvegardé dans ce navigateur seulement et partagé entre les deux pages. Les formations affichées sont restreintes aux 22 techniciens de la liste du Forms. Les notes Forms (Q1 = normes d'installation du fabricant, Q2 = confiance dépannage/service) apparaîtront ici à mesure que les réponses seront compilées dans le Tableau de compétences-2026.</p>
+<script>
+
+const DATA = {"techs": ["Abderrazak Abbassi", "Alexandre Damien", "Karim Bissiongol Mousseni", "Élie Nkoueko Wantou", "Étienne Rolland", "Jocelyn Thomas", "Steve Nzudie Tinkam", "Mahmoud Hamed", "Matthieu Proulx-Fleury", "Michael Fortunato", "Michel Charbonneau", "Nicolas Marois", "Panagiotis Despotopoulos", "Pierre Thomopoulos", "René Bougie", "Stephen Beauchemin", "Sylvain Marois", "Sylvain Thibeault", "Tarek Hamed", "Xavier Beauchamp", "Yannick Léger", "David Dumais"], "themes": [{"nom": "MINI-SPLIT", "marques": ["Daikin Comfort", "Hisense", "Minisplit ECO AC"]}, {"nom": "DAIKIN VRV", "marques": ["Daikin Comfort"]}, {"nom": "REFROIDISSEURS", "marques": ["Clivet", "Daikin Applied", "Multistack", "Petra"]}, {"nom": "UNITÉS DE TOIT", "marques": ["Daikin Applied", "Daikin Comfort"]}, {"nom": "HUMIDIFICATION / DÉSHUMIDIFICATION", "marques": ["DriSteem", "NovelAire"]}, {"nom": "TRAITEMENT D'AIR", "marques": ["Aldes", "Bousquet", "CaptiveAire", "Climate by Design", "Continental Fan", "Coratech", "Daikin Applied", "Dynamic Air Filters", "Heatco", "Nagas Innovation", "Oxygen8", "Scott Springfield", "Thermotek", "Unilux VFC", "Valent"]}, {"nom": "ÉQUIPEMENTS HYDRONIQUES", "marques": ["ACME Engineering Products", "AIC", "Hubbell", "Jaga", "Neptune Benson", "Niles Steel Tank", "Nyle Systems", "Omega Thermo Products", "Security Chimneys", "Siwa", "TWA Panel Systems", "Thermolec", "Viessmann", "Westlake Pipe & Fittings", "Wilo", "Xylem"]}], "formations": {"Abderrazak Abbassi": {}, "Alexandre Damien": {"Journal||VRV Mega Q": "Terminé (2024-06-17)", "Journal||Formation GAZ A2L": "Planifié (date ultérieure) (2026-11-25)", "Journal||VRV Installation 21-12 ": "Terminé", "Journal||VRV Commissioning 21-12 ": "Terminé", "Journal||VRV Service & Troubleshooting Level 1 ": "Terminé"}, "Karim Bissiongol Mousseni": {"||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "Daikin online training||Microtech 4": "faite", "||Rebel applied": "faite", "||Rebel service": "faite", "||Microtech 3": "faite"}, "Élie Nkoueko Wantou": {"||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "||Rebel applied and service troubleshooting (avril 2026)": "faite", "Daikin online training||Microtech 4": "faite", "||Rebel applied": "faite", "||Rebel service": "faite", "||Scroll chiller and trouble shooting": "en cours", "||Microtech 3": "faite"}, "Étienne Rolland": {"Multistack||ARA, ARP": "faite", "||Air cooled & water cooled modular": "faite", "||Maglevgen 1&2": "faite", "Daikin||Scroll chiller and trouble shooting": "faite", "||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "||Rebel applied and service troubleshooting (avril 2026)": "faite", "Daikin online training||Microtech 4": "faite", "||Rebel applied": "faite", "||Rebel service": "faite", "||Scroll chiller and trouble shooting": "faite", "Evapco||Cooling tower service": "faite", "Journal||Microtech 3,4 ": "Terminé", "Journal||Chiller Scroll, AGZ, WGZ": "En cours", "Journal||Multistack (MS Water cooled modular)": "Terminé", "Journal||Multistack (ARA / ARP)": "Planifié (date ultérieure)", "Journal||Mutlistack MAGLEV 1": "Planifié (date ultérieure)", "Journal||VRV Installation 21-12 ": "Terminé", "Journal||VRV Commissioning 21-12 ": "Terminé", "Journal||VRV Service & Troubleshooting Level 1 ": "Planifié (date ultérieure)"}, "Jocelyn Thomas": {"||Air cooled & water cooled modular": "cédulée", "||VRV installation & commissioning": "faite", "Daikin online training||Microtech 4": "en cours", "||Rebel applied": "en cours", "||Rebel service": "en cours", "||Scroll chiller and trouble shooting": "à céduler", "||Microtech 3": "en cours", "Bell & Gossett||Pump and drive": "faite", "Xylem||Fire pump": "faite", "Evapco||Cooling tower service": "faite"}, "Steve Nzudie Tinkam": {"||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "à céduler", "Daikin online training||Microtech 4": "en cours", "||Rebel applied": "en cours", "||Rebel service": "faite", "||Microtech 3": "en cours"}, "Mahmoud Hamed": {"||Air cooled & water cooled modular": "cédulée", "||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "à céduler", "Daikin online training||Microtech 4": "en cours", "||Rebel applied": "en cours", "||Rebel service": "en cours", "||Microtech 3": "en cours", "Hi sense||Formation 1 journée": "faite", "Seresco||Formation Seresco": "cédulée"}, "Matthieu Proulx-Fleury": {"Journal||Dectron": "Terminé (2024-10-15)", "Journal||Multistack Gen III Maglev": "Terminé (2025-10-13)", "Journal||Formation GAZ A2L": "Planifié (date ultérieure) (2026-11-25)", "Journal||Xylem": "Terminé (2026-12-15)", "Journal||Microtech 3,4 ": "En cours", "Journal||Chiller Scroll, AGZ, WGZ": "En cours", "Journal||Multistack (MS Water cooled modular)": "Terminé", "Journal||Multistack (ARA / ARP)": "Planifié (date ultérieure)", "Journal||Multistack (HP)": "Planifié (date ultérieure)", "Journal||Mutlistack MAGLEV 1": "Planifié (date ultérieure)", "Journal||VRV Installation 21-12 ": "Terminé", "Journal||VRV Commissioning 21-12 ": "Terminé", "Journal||VRV Service & Troubleshooting Level 1 ": "Planifié (date ultérieure)"}, "Michael Fortunato": {"Seresco||Formation Seresco": "5"}, "Michel Charbonneau": {}, "Nicolas Marois": {"||Air cooled & water cooled modular": "cédulée", "||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "||Rebel applied": "faite", "||Rebel service": "faite", "Viessmann online training||C12 & CA3B": "faite", "Viessmann||Vitocrossal 200 C12 & 300 CA3B - installation & start up": "faite"}, "Panagiotis Despotopoulos": {"||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "Daikin online training||Microtech 4": "faite", "||Microtech 3": "faite", "Bell & Gossett||Pump and drive": "faite", "Xylem||Fire pump": "faite"}, "Pierre Thomopoulos": {"||Air cooled & water cooled modular": "cédulée", "||VRV installation & commissioning": "faite", "||Rebel applied and service troubleshooting (avril 2026)": "faite", "Daikin online training||Microtech 4": "faite", "||Rebel applied": "faite", "||Rebel service": "faite", "||AGS, WGS, AWS products - Screw chiller service & repair": "faite", "Mcquay Factory service||Centrifugal fundamentals - week 1": "faite", "||Centrifugal chiller service - week 2": "faite", "||Centrifugal chiller repair - week 3": "faite"}, "René Bougie": {"Journal||Dectron": "Terminé (2024-10-15)", "Journal||Petra": "Terminé (2025-12-16)", "Journal||Formation GAZ A2L": "Planifié (date ultérieure) (2026-11-25)", "Journal||Multistack (MS Water cooled modular)": "Terminé"}, "Stephen Beauchemin": {"Multistack||ARA, ARP": "faite", "||Air cooled & water cooled modular": "faite", "||Maglevgen 1&2": "faite", "Daikin||Scroll chiller and trouble shooting": "faite", "||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "||Rebel applied and service troubleshooting (avril 2026)": "faite", "Daikin online training||Microtech 4": "faite", "||Rebel applied": "faite", "||Rebel service": "faite", "||Scroll chiller and trouble shooting": "faite", "||Microtech 3": "faite", "||Basic of brazing work": "faite", "||Daikin VRV BMS control logic": "faite", "Hi sense||Training 1 journée": "faite", "Bell & Gossett||Pump and drive": "faite", "Xylem||Fire pump": "faite", "Evapco||Cooling tower service": "faite", "Journal||Microtech 3,4 ": "En cours", "Journal||Chiller Scroll, AGZ, WGZ": "En cours", "Journal||Multistack (MS Water cooled modular)": "Terminé", "Journal||Multistack (ARA / ARP)": "Planifié (date ultérieure)", "Journal||Mutlistack MAGLEV 1": "Planifié (date ultérieure)", "Journal||VRV Installation 21-12 ": "Terminé", "Journal||VRV Commissioning 21-12 ": "Terminé", "Journal||VRV Service & Troubleshooting Level 1 ": "Planifié (date ultérieure)"}, "Sylvain Marois": {"||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "Viessmann online training||C12 & CA3B": "faite", "Viessmann||Vitocrossal 200 C12 & 300 CA3B - installation & start up": "faite"}, "Sylvain Thibeault": {}, "Tarek Hamed": {"||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "Daikin online training||Microtech 4": "faite", "||Rebel applied": "faite", "||Rebel service": "faite", "||Microtech 3": "faite", "Daikin||Mega Q 2 days training service": "faite", "Hi sense||Training 1 journée": "faite", "Journal||Microtech 3,4 ": "En cours", "Journal||VRV Installation 21-12 ": "Terminé", "Journal||VRV Commissioning 21-12 ": "Terminé", "Journal||VRV Service & Troubleshooting Level 1 ": "Planifié (date ultérieure)"}, "Xavier Beauchamp": {"||VRV installation & commissioning": "faite", "||VRV service and trouble shooting Level 1": "faite", "||VRV service and trouble shooting Level 2": "faite", "||Accrédité service champion en 2025": "faite", "||Microtech 3": "faite", "Daikin||Mega Q 2 days training service": "faite", "Journal||VRV Service & Troubleshooting Level 1 ": "Planifié (date ultérieure) (2023-11-27)", "Journal||Microtech 3,4 ": "En cours", "Journal||VRV Installation 21-12 ": "Terminé", "Journal||VRV Commissioning 21-12 ": "Terminé"}, "Yannick Léger": {"||VRV installation & commissioning": "à céduler", "Daikin online training||Microtech 4": "en cours", "||Rebel applied": "en cours", "||Rebel service": "en cours", "||Microtech 3": "en cours", "Seresco||Formation Seresco": "cédulée"}, "David Dumais": {"Seresco||Formation Seresco": "cédulée"}}, "notes": {"Abderrazak Abbassi": {}, "Alexandre Damien": {}, "Karim Bissiongol Mousseni": {}, "Élie Nkoueko Wantou": {}, "Étienne Rolland": {}, "Jocelyn Thomas": {}, "Steve Nzudie Tinkam": {}, "Mahmoud Hamed": {}, "Matthieu Proulx-Fleury": {}, "Michael Fortunato": {}, "Michel Charbonneau": {}, "Nicolas Marois": {}, "Panagiotis Despotopoulos": {}, "Pierre Thomopoulos": {}, "René Bougie": {}, "Stephen Beauchemin": {}, "Sylvain Marois": {}, "Sylvain Thibeault": {}, "Tarek Hamed": {}, "Xavier Beauchamp": {}, "Yannick Léger": {}, "David Dumais": {}}, "courses": [{"cours": "ARA, ARP", "groupe": "Multistack"}, {"cours": "Air cooled & water cooled modular", "groupe": ""}, {"cours": "Maglevgen 1&2", "groupe": ""}, {"cours": "Scroll chiller and trouble shooting", "groupe": "Daikin"}, {"cours": "VRV installation & commissioning", "groupe": ""}, {"cours": "VRV service and trouble shooting Level 1", "groupe": ""}, {"cours": "Rebel applied and service troubleshooting (avril 2026)", "groupe": ""}, {"cours": "VRV service and trouble shooting Level 2", "groupe": ""}, {"cours": "Accrédité service champion en 2025", "groupe": ""}, {"cours": "Microtech 4", "groupe": "Daikin online training"}, {"cours": "Rebel applied", "groupe": ""}, {"cours": "Rebel service", "groupe": ""}, {"cours": "Scroll chiller and trouble shooting", "groupe": ""}, {"cours": "Microtech 3", "groupe": ""}, {"cours": "Basic of brazing work", "groupe": ""}, {"cours": "Daikin VRV BMS control logic", "groupe": ""}, {"cours": "Mega Q 2 days training service", "groupe": "Daikin"}, {"cours": "AGS, WGS, AWS products - Screw chiller service & repair", "groupe": ""}, {"cours": "Training 1 journée", "groupe": "Hi sense"}, {"cours": "Pump and drive", "groupe": "Bell & Gossett"}, {"cours": "Fire pump", "groupe": "Xylem"}, {"cours": "Cooling tower service", "groupe": "Evapco"}, {"cours": "Centrifugal fundamentals - week 1", "groupe": "Mcquay Factory service"}, {"cours": "Centrifugal chiller service - week 2", "groupe": ""}, {"cours": "Centrifugal chiller repair - week 3", "groupe": ""}, {"cours": "Formation 1 journée", "groupe": "Hi sense"}, {"cours": "C12 & CA3B", "groupe": "Viessmann online training"}, {"cours": "Vitocrossal 200 C12 & 300 CA3B - installation & start up", "groupe": "Viessmann"}, {"cours": "Formation Seresco", "groupe": "Seresco"}, {"cours": "Formation DriSteem", "groupe": "DriSteem"}, {"cours": "Formation future", "groupe": "Formation future"}]};
+const $ = s => document.querySelector(s);
+const STAT_CLASS = {"faite":"s1","en cours":"s2","à céduler":"s3","cédulée":"s4"};
+function ccqMap(){ try{ return JSON.parse(localStorage.getItem("itc-formation-ccq")||"{}"); }catch(e){ return {}; } }
+function setCCQ(name, val){
+  const all = ccqMap(); all[name] = val;
+  localStorage.setItem("itc-formation-ccq", JSON.stringify(all));
+}
+function esc(s){ const d=document.createElement("div"); d.textContent=String(s); return d.innerHTML; }
+function statChip(st){
+  const key = Object.keys(STAT_CLASS).find(k => String(st).toLowerCase().startsWith(k));
+  const cls = key ? STAT_CLASS[key] : "sx";
+  return `<span class="chip ${cls}">${esc(st)}</span>`;
+}
+function brandForCourse(groupe, cours){
+  const g = (groupe||"").toLowerCase(), c = (cours||"").toLowerCase();
+  if(g === "journal"){
+    if(c.includes("vrv") || c.includes("mega q")) return "Daikin Comfort";
+    if(c.includes("microtech")) return "Daikin Applied";
+    if(c.includes("multistack")) return "Multistack";
+    if(c.includes("petra")) return "Petra";
+    return null;
+  }
+  if(g === "daikin" || g === "daikin online training"){
+    if(c.includes("vrv") || c.includes("mega q") || c.includes("brazing") || c.includes("bms") || c.includes("champion")) return "Daikin Comfort";
+    return "Daikin Applied";
+  }
+  if(g === "hi sense") return "Hisense";
+  if(g === "bell & gossett") return "Xylem";
+  if(g === "mcquay factory service") return "Daikin Applied";
+  if(g.startsWith("viessmann")) return "Viessmann";
+  return groupe;
+}
+function formsChips(tech, prefix){
+  const n = DATA.notes[tech] || {};
+  let out = "";
+  for(const k of Object.keys(n)){
+    if(k.startsWith(prefix + " — Q1")) out += `<span class="note">Forms Q1 · normes d'installation : ${esc(n[k])}/10</span>`;
+    if(k.startsWith(prefix + " — Q2")) out += `<span class="note q2">Forms Q2 · dépannage/service : ${esc(n[k])}/10</span>`;
+  }
+  return out;
+}
+function render(){
+  const tech = $("#techSel").value;
+  const panel = $("#panel");
+  if(!tech){ panel.innerHTML = ""; return; }
+  const ccq = ccqMap();
+  const form = DATA.formations[tech] || {};
+  const byBrand = {};
+  let total = 0, faites = 0;
+  for(const key of Object.keys(form)){
+    const [groupe, cours] = key.split("||");
+    const st = form[key];
+    total++;
+    if(String(st).toLowerCase().startsWith("faite") || String(st).toLowerCase().startsWith("terminé")) faites++;
+    const b = brandForCourse(groupe, cours);
+    if(b){ (byBrand[b] = byBrand[b] || []).push({cours, st}); }
+  }
+  let h = `<div class="tcard"><div class="thead"><h2>${esc(tech)}</h2>
+    <span><label style="font-size:12.5px;color:var(--mut)">Statut : </label>
+    <select id="ccqSel"><option value="">CCQ / Hors-CCQ — à choisir</option>
+    <option value="CCQ"${ccq[tech]==="CCQ"?" selected":""}>CCQ</option>
+    <option value="Hors-CCQ"${ccq[tech]==="Hors-CCQ"?" selected":""}>Hors-CCQ</option></select></span></div>
+    <p class="sum">${total} formation(s) au dossier · ${faites} faite(s)/terminée(s) · Notes Forms : saisies au fur et à mesure des réponses au formulaire.</p>`;
+  for(const theme of DATA.themes){
+    h += `<details class="theme" open><summary>${esc(theme.nom)} ${formsChips(tech, theme.nom)}</summary>`;
+    for(const brand of theme.marques){
+      const items = byBrand[brand] || [];
+      h += `<div class="brand"><span class="bname">${esc(brand)}</span><br>`;
+      h += formsChips(tech, brand);
+      if(items.length){ for(const it of items) h += `<span class="chip ${STAT_CLASS[String(it.st).toLowerCase().split(" ")[0]]||'sx'}">${esc(it.cours)} — ${esc(it.st)}</span>`; }
+      else if(!formsChips(tech, brand)) h += `<span class="none">Aucune formation reçue au dossier</span>`;
+      h += `</div>`;
+    }
+    h += `</details>`;
+  }
+  const all = Object.keys(form);
+  if(all.length){
+    h += `<div class="allf"><h3>Toutes les formations reçues (${all.length})</h3>`;
+    for(const key of all.sort()){
+      const [groupe, cours] = key.split("||");
+      h += `<div class="row"><span>${esc(cours)} <span style="color:var(--mut)">(${esc(groupe)})</span></span>${statChip(form[key])}</div>`;
+    }
+    h += `</div>`;
+  }
+  h += `</div>`;
+  panel.innerHTML = h;
+  $("#ccqSel").addEventListener("change", e => { setCCQ(tech, e.target.value); fillTechs($("#techSel").value); });
+}
+function fillTechs(keep){
+  const f = document.querySelector(".seg button.on").dataset.f;
+  const ccq = ccqMap();
+  const sel = $("#techSel");
+  sel.innerHTML = `<option value="">— Choisir un technicien —</option>`;
+  for(const t of DATA.techs){
+    const st = ccq[t] || "";
+    if(f === "CCQ" && st !== "CCQ") continue;
+    if(f === "Hors-CCQ" && st !== "Hors-CCQ") continue;
+    const o = document.createElement("option");
+    o.value = t; o.textContent = t + (st ? ` (${st})` : "");
+    sel.appendChild(o);
+  }
+  if(keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+  render();
+}
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".seg button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); fillTechs($("#techSel").value);
+}));
+$("#techSel").addEventListener("change", render);
+fillTechs("");
+
+</script>
+</body>
+</html>
