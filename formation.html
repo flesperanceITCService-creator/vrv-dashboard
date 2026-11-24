@@ -56,7 +56,7 @@
 <body>
 <header>
   <h1>🎓 Formation des techniciens</h1>
-  <p>Source : tableau « Formation Technicien » ; liste des techniciens alignée sur les 22 noms du Forms (page Arbre de compétences), mise à jour le 24 novembre 2026 &bull; Statuts : 1 = faite, 2 = en cours, 3 = à céduler, 4 = cédulée</p>
+  <p>Source : tableau « Formation Technicien » ; liste des techniciens alignée sur les 22 noms du Forms (page Arbre de compétences), mise à jour le 24 novembre 2026 — chaque fiche liste toutes les formations du tableau, statut modifiable &bull; Statuts : 1 = faite, 2 = en cours, 3 = à céduler, 4 = cédulée</p>
   <nav>
     <a href="index.html">Accueil</a>
     <a href="tableau-de-bord.html">Tableau de bord VRV</a>
@@ -145,11 +145,9 @@ const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
 const effVal = (nom, idx, v) => { const k = nom+"|"+idx; return (k in statutsSaved) ? statutsSaved[k] : (v==null ? "" : String(v)); };
 
 $("techs").innerHTML = DATA.techniciens.map((t, ti) => {
-  const entries = Object.entries(t.statuts);
   const byGroup = {};
-  entries.forEach(([idx, v]) => {
-    const f = DATA.formations[+idx];
-    (byGroup[f.compagnie] = byGroup[f.compagnie] || []).push([f.nom, effVal(t.nom, idx, v), idx]);
+  DATA.formations.forEach((f, idx) => {
+    (byGroup[f.compagnie] = byGroup[f.compagnie] || []).push([f.nom, effVal(t.nom, idx, t.statuts[idx]), idx]);
   });
   const list = Object.entries(byGroup).map(([g, rows]) =>
     `<div class="grp">${g}</div>` + rows.map(([nom, v, idx]) => {
@@ -173,7 +171,7 @@ $("techs").innerHTML = DATA.techniciens.map((t, ti) => {
       <button class="on" onclick="miniTab(${ti},'f',this)">Formations</button>
       <button onclick="miniTab(${ti},'n',this)">📝 Notes personnelles</button>
     </div>
-    <div class="flist" data-pane="f">${list || '<span class="sum">Aucune formation au tableau.</span>'}</div>
+    <div class="flist" data-pane="f">${list}</div>
     <div data-pane="n" style="display:none">
       <textarea placeholder="Notes de rencontre avec ${t.nom}…" oninput="saveNote(${ti}, this)">${esc(notesSaved[t.nom] || "")}</textarea>
       <div class="saved" id="sv${ti}"></div>
@@ -185,7 +183,7 @@ DATA.techniciens.forEach((t, ti) => updateSum(ti));
 function updateSum(ti){
   const t = DATA.techniciens[ti];
   const cnt = {1:0,2:0,3:0,4:0};
-  Object.entries(t.statuts).forEach(([idx, v]) => { const e = effVal(t.nom, idx, v); if(cnt[e]!==undefined) cnt[e]++; });
+  DATA.formations.forEach((f, idx) => { const e = effVal(t.nom, idx, t.statuts[idx]); if(cnt[e]!==undefined) cnt[e]++; });
   const el = $("sum"+ti);
   if(el) el.textContent = `${cnt[1]} faite(s) · ${cnt[2]} en cours · ${cnt[3]} à céduler · ${cnt[4]} cédulée(s)`;
 }
