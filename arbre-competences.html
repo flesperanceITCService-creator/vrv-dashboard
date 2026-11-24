@@ -88,7 +88,7 @@
   <span id="filtreInfo" style="font-size:12.5px;color:var(--mut)"></span>
 </div>
 <div class="panel" id="panel"></div>
-<div id="vueS" style="display:none"><div class="wrap"><table class="sum" id="sumTable"></table></div><p class="foot" style="padding-top:4px">Pointages du Forms (autoévaluation) : Q1 = normes d'installation du fabricant, Q2 = confiance dépannage/service. Clique sur le nom d'un technicien pour trier le tableau selon sa colonne (le plus fort en haut). Une case vide signifie que le technicien n'a pas encore répondu. Répondants compilés à ce jour : <span id="sumCount"></span>.</p></div>
+<div id="vueS" style="display:none"><div class="wrap"><table class="sum" id="sumTable"></table></div><p class="foot" style="padding-top:4px">Pointages du Forms (autoévaluation) : Q1 = normes d'installation du fabricant, Q2 = confiance dépannage/service. Par défaut, les techniciens sont classés par moyenne générale (le plus fort à gauche). Clique sur un critère à gauche pour classer les techniciens selon ce critère, ou sur le nom d'un technicien pour amener sa colonne en premier. Une case vide signifie que le technicien n'a pas encore répondu. Répondants compilés à ce jour : <span id="sumCount"></span>.</p></div>
 <p class="foot">Le statut CCQ / Hors-CCQ se choisit dans la fiche du technicien (ou sur la page Formation des techniciens) ; il est sauvegardé dans ce navigateur seulement et partagé entre les deux pages. Les formations affichées sont restreintes aux 22 techniciens de la liste du Forms. Les notes Forms (Q1 = normes d'installation du fabricant, Q2 = confiance dépannage/service) apparaîtront ici à mesure que les réponses seront compilées dans le Tableau de compétences-2026.</p>
 <script>
 
@@ -239,6 +239,13 @@ const CRITERES = [
   ["TRANSVERSAL", ["Sécurité et conformité","Capacité à former"]]
 ];
 let sumOrder = null;
+let sumTech = null;
+function techScore(t, ref){
+  const n = DATA.notes[t] || {};
+  if(!ref) return Object.keys(n).length ? Object.values(n).reduce((a, b) => a + Number(b), 0) / Object.keys(n).length : -1;
+  const v = n[ref];
+  return (v === undefined || v === null || v === "") ? -1 : Number(v);
+}
 function noteClass(v){
   if(v === null || v === undefined || v === "") return "nna";
   v = Number(v);
@@ -254,15 +261,15 @@ function techMoy(t){
   return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
 }
 function buildSommaire(){
-  const techs = sumOrder || DATA.techs;
+  const techs = sumOrder || [...DATA.techs].sort((a, b) => techScore(b, null) - techScore(a, null) || a.localeCompare(b));
   let h = "<thead><tr><th style='text-align:left'>Critère — cliquer un nom pour trier</th>";
-  for(const t of techs) h += `<th data-tech="${esc(t)}" title="Trier selon ${esc(t)}">${esc(t.split(" ")[0])}<br>${esc(t.split(" ").slice(1).join(" "))}</th>`;
+  for(const t of techs) h += `<th data-tech="${esc(t)}" title="Mettre ${esc(t)} en premier">${esc(t.split(" ")[0])}<br>${esc(t.split(" ").slice(1).join(" "))}</th>`;
   h += "</tr></thead><tbody>";
   for(const [grp, keys] of CRITERES){
     if(grp) h += `<tr class="grp"><td colspan="${techs.length + 1}">${esc(grp)}</td></tr>`;
     if(!keys) continue;
     for(const k of keys){
-      h += `<tr><td class="crit">${esc(k.replace(" · Normes d'installation du fabricant"," · Q1").replace(" · Confiance dépannage et service"," · Q2"))}</td>`;
+      h += `<tr><td class="crit" data-crit="${esc(k)}" style="cursor:pointer" title="Trier les techniciens selon ce critère">${esc(k.replace(" · Normes d'installation du fabricant"," · Q1").replace(" · Confiance dépannage et service"," · Q2"))}</td>`;
       for(const t of techs){
         const v = (DATA.notes[t] || {})[k];
         h += `<td class="${noteClass(v)}">${(v === null || v === undefined || v === "") ? "—" : esc(v)}</td>`;
@@ -279,7 +286,13 @@ function buildSommaire(){
   $("#sumTable").innerHTML = h;
   document.querySelectorAll("#sumTable th[data-tech]").forEach(th => th.addEventListener("click", () => {
     const t = th.dataset.tech;
-    sumOrder = [...DATA.techs].sort((a, b) => ((DATA.notes[b] || {})[t] ?? -1) - ((DATA.notes[a] || {})[t] ?? -1) || a.localeCompare(b));
+    sumTech = t;
+    sumOrder = [...DATA.techs].sort((a, b) => (b === t) - (a === t) || techScore(b, null) - techScore(a, null) || a.localeCompare(b));
+    buildSommaire();
+  }));
+  document.querySelectorAll("#sumTable td[data-crit]").forEach(td => td.addEventListener("click", () => {
+    const k = td.dataset.crit;
+    sumOrder = [...DATA.techs].sort((a, b) => techScore(b, k) - techScore(a, k) || a.localeCompare(b));
     buildSommaire();
   }));
   const rep = DATA.techs.filter(t => Object.keys(DATA.notes[t] || {}).length);
