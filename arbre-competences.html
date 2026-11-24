@@ -41,6 +41,24 @@
   .allf{margin-top:14px;border-top:2px solid #eef2f6;padding-top:10px}
   .allf h3{margin:0 0 6px;font-size:14px;color:var(--blue)}
   .allf .row{display:flex;justify-content:space-between;gap:8px;padding:3.5px 0;border-bottom:1px solid #f0f3f6;font-size:13px;align-items:center}
+
+  .tabs{display:flex;gap:8px;padding:16px 22px 0}
+  .tabs button{border:1px solid #c4cfd9;background:#fff;color:var(--blue);padding:8px 18px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:600}
+  .tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .wrap{overflow-x:auto;padding:14px 22px 6px}
+  table.sum{border-collapse:collapse;background:#fff;font-size:12.5px;box-shadow:0 1px 5px rgba(0,0,0,.09)}
+  table.sum th, table.sum td{border:1px solid #e6ebf1;padding:5px 7px;text-align:center;white-space:nowrap}
+  table.sum th{background:var(--blue);color:#fff;cursor:pointer;position:sticky;top:0;font-size:12px}
+  table.sum th:hover{background:var(--blue2)}
+  table.sum td.crit{text-align:left;font-weight:600;color:var(--blue);white-space:normal;min-width:210px;background:#f7fafc;position:sticky;left:0}
+  table.sum tr.grp td{background:#FFF2CC;font-weight:700;color:var(--blue);text-align:left}
+  .n9{background:#A9D08E;color:#2f4a1e;font-weight:700}
+  .n7{background:#C6E0B4;color:#37571f;font-weight:700}
+  .n5{background:#FFE699;color:#6b5510;font-weight:700}
+  .n3{background:#F8CBAD;color:#7c3f16;font-weight:700}
+  .n0{background:#F4A6A6;color:#7c2222;font-weight:700}
+  .nna{color:#9aa7b4}
+
   .foot{font-size:12px;color:var(--mut);padding:0 22px 26px}
 </style>
 </head>
@@ -57,6 +75,7 @@
     <a class="on" href="#">Arbre de compétences</a>
   </nav>
 </header>
+<div class="tabs"><button id="tabA" class="on" onclick="showVue('A')">🌳 Arbre par technicien</button><button id="tabS" onclick="showVue('S')">📊 Sommaire — tous les techniciens</button></div>
 <div class="bar">
   <label for="techSel">Technicien :</label>
   <select id="techSel"></select>
@@ -69,6 +88,7 @@
   <span id="filtreInfo" style="font-size:12.5px;color:var(--mut)"></span>
 </div>
 <div class="panel" id="panel"></div>
+<div id="vueS" style="display:none"><div class="wrap"><table class="sum" id="sumTable"></table></div><p class="foot" style="padding-top:4px">Pointages du Forms (autoévaluation) : Q1 = normes d'installation du fabricant, Q2 = confiance dépannage/service. Clique sur le nom d'un technicien pour trier le tableau selon sa colonne (le plus fort en haut). Une case vide signifie que le technicien n'a pas encore répondu. Répondants compilés à ce jour : <span id="sumCount"></span>.</p></div>
 <p class="foot">Le statut CCQ / Hors-CCQ se choisit dans la fiche du technicien (ou sur la page Formation des techniciens) ; il est sauvegardé dans ce navigateur seulement et partagé entre les deux pages. Les formations affichées sont restreintes aux 22 techniciens de la liste du Forms. Les notes Forms (Q1 = normes d'installation du fabricant, Q2 = confiance dépannage/service) apparaîtront ici à mesure que les réponses seront compilées dans le Tableau de compétences-2026.</p>
 <script>
 
@@ -206,6 +226,74 @@ document.querySelectorAll(".seg button[data-f]").forEach(b => b.addEventListener
 }));
 $("#resetFiltre").addEventListener("click", resetFiltre);
 $("#techSel").addEventListener("change", render);
+
+const CRITERES = [
+  ["", null],
+  ["MINI-SPLIT", ["MINI-SPLIT — Q1 · Normes d'installation du fabricant","MINI-SPLIT — Q2 · Confiance dépannage et service"]],
+  ["DAIKIN VRV", ["DAIKIN VRV — Q1 · Normes d'installation du fabricant","DAIKIN VRV — Q2 · Confiance dépannage et service"]],
+  ["REFROIDISSEURS", ["REFROIDISSEURS — Q1 · Normes d'installation du fabricant","REFROIDISSEURS — Q2 · Confiance dépannage et service"]],
+  ["UNITÉS DE TOIT", ["UNITÉS DE TOIT — Q1 · Normes d'installation du fabricant","UNITÉS DE TOIT — Q2 · Confiance dépannage et service"]],
+  ["HUMIDIFICATION / DÉSHUMIDIFICATION", ["HUMIDIFICATION / DÉSHUMIDIFICATION — Q1 · Normes d'installation du fabricant","HUMIDIFICATION / DÉSHUMIDIFICATION — Q2 · Confiance dépannage et service"]],
+  ["ÉQUIPEMENTS HYDRONIQUES", ["ÉQUIPEMENTS HYDRONIQUES — Q1 · Normes d'installation du fabricant","ÉQUIPEMENTS HYDRONIQUES — Q2 · Confiance dépannage et service"]],
+  ["TRAITEMENT D'AIR — par marque", ["Bousquet — Q1 · Normes d'installation du fabricant","Bousquet — Q2 · Confiance dépannage et service","Aldes — Q1 · Normes d'installation du fabricant","Aldes — Q2 · Confiance dépannage et service","Oxygen8 — Q1 · Normes d'installation du fabricant","Oxygen8 — Q2 · Confiance dépannage et service","Seresco — Q1 · Normes d'installation du fabricant","Seresco — Q2 · Confiance dépannage et service"]],
+  ["TRANSVERSAL", ["Sécurité et conformité","Capacité à former"]]
+];
+let sumOrder = null;
+function noteClass(v){
+  if(v === null || v === undefined || v === "") return "nna";
+  v = Number(v);
+  if(v >= 9) return "n9";
+  if(v >= 7) return "n7";
+  if(v >= 5) return "n5";
+  if(v >= 3) return "n3";
+  return "n0";
+}
+function techMoy(t){
+  const n = DATA.notes[t] || {};
+  const vals = Object.values(n).map(Number).filter(x => !isNaN(x));
+  return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
+}
+function buildSommaire(){
+  const techs = sumOrder || DATA.techs;
+  let h = "<thead><tr><th style='text-align:left'>Critère — cliquer un nom pour trier</th>";
+  for(const t of techs) h += `<th data-tech="${esc(t)}" title="Trier selon ${esc(t)}">${esc(t.split(" ")[0])}<br>${esc(t.split(" ").slice(1).join(" "))}</th>`;
+  h += "</tr></thead><tbody>";
+  for(const [grp, keys] of CRITERES){
+    if(grp) h += `<tr class="grp"><td colspan="${techs.length + 1}">${esc(grp)}</td></tr>`;
+    if(!keys) continue;
+    for(const k of keys){
+      h += `<tr><td class="crit">${esc(k.replace(" · Normes d'installation du fabricant"," · Q1").replace(" · Confiance dépannage et service"," · Q2"))}</td>`;
+      for(const t of techs){
+        const v = (DATA.notes[t] || {})[k];
+        h += `<td class="${noteClass(v)}">${(v === null || v === undefined || v === "") ? "—" : esc(v)}</td>`;
+      }
+      h += "</tr>";
+    }
+  }
+  h += `<tr><td class="crit">MOYENNE GÉNÉRALE</td>`;
+  for(const t of techs){
+    const m = techMoy(t);
+    h += `<td class="${noteClass(m === null ? "" : Math.round(m))}">${m === null ? "—" : m.toFixed(1)}</td>`;
+  }
+  h += "</tr></tbody>";
+  $("#sumTable").innerHTML = h;
+  document.querySelectorAll("#sumTable th[data-tech]").forEach(th => th.addEventListener("click", () => {
+    const t = th.dataset.tech;
+    sumOrder = [...DATA.techs].sort((a, b) => ((DATA.notes[b] || {})[t] ?? -1) - ((DATA.notes[a] || {})[t] ?? -1) || a.localeCompare(b));
+    buildSommaire();
+  }));
+  const rep = DATA.techs.filter(t => Object.keys(DATA.notes[t] || {}).length);
+  $("#sumCount").textContent = rep.length + " / " + DATA.techs.length + (rep.length ? " (" + rep.join(", ") + ")" : "");
+}
+function showVue(v){
+  $("#tabA").classList.toggle("on", v === "A");
+  $("#tabS").classList.toggle("on", v === "S");
+  document.querySelector(".bar").style.display = v === "A" ? "" : "none";
+  $("#panel").style.display = v === "A" ? "" : "none";
+  $("#vueS").style.display = v === "S" ? "" : "none";
+  if(v === "S") buildSommaire();
+}
+
 fillTechs("");
 
 </script>
